@@ -253,11 +253,11 @@
               }
 
               cloudParticles.forEach(p => {
-                p.rotation.z -= 0.0002;
+                p.rotation.z -= 0.0001;
               });
 
               rainGeo.vertices.forEach(p => {
-                p.velocity -= 0.1 + Math.random() * 0.1;
+                p.velocity -= 0.01 + Math.random() * 0.01;
                 p.y += p.velocity;
                 if (p.y < -200)
                 {
@@ -266,7 +266,7 @@
                 }
               });
               rainGeo.verticesNeedUpdate = true;
-              rain.rotation.y += 0.002;
+              //rain.rotation.y += 0.002;
 
               requestAnimationFrame(render);
               renderer.render(scene, camera);
