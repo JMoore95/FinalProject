@@ -266,6 +266,7 @@
                 }
               });
               rainGeo.verticesNeedUpdate = true;
+              rain.rotation.y += 0.002;
 
               requestAnimationFrame(render);
               renderer.render(scene, camera);
