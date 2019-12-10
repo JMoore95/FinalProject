@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <title>Final Project</title>
         <meta charset="utf-8"/>
+        <meta name="author" content="Jacob Williams-Moore">
         <script src=https://threejs.org/build/three.js></script>
         <script src="https://threejs.org/examples/js/controls/OrbitControls.js"></script>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+        <script src="https://threejs.org/examples/js/controls/PointerLockControls.js"></script>
+        <link rel="stylesheet" type="text/css" href="styles.css" />
     </head>
     <body>
         <script>
@@ -14,9 +18,13 @@
             let WIDTH = window.innerWidth;
             let HEIGHT = window.innerHeight;
             let cube, geometry, loader, texture;
-            let mountains, desert, snow, test;
+            let mountains, desert, ice, snow, test;
             let cloudGeo, cloudMaterial, cloudParticles = [];
-            let rain, rainGeo, rainMaterial, rainDrop, rainCount = 15000;
+            let rain, rainGeo, rainMaterial, rainDrop, rainCount = 500000;
+            let controls, moveForward;
+            let direction, distance;
+            let min = -5000, max = 5000;
+            let min2 = -2500, max2 = 2500;
 
             function init()
             {
@@ -60,126 +68,181 @@
 
             function initCamera()
             {
-              camera = new THREE.PerspectiveCamera(60, WIDTH / HEIGHT, 1, 1000);
-              // camera.position.set(0, 0, 5);
-              // camera.lookAt(scene.position);
-              camera.position.z = 1;
-              camera.rotation.x = 1.16;
-              camera.rotation.y = -0.12;
-              camera.rotation.z = 0.27;
-              cameraControls = new THREE.OrbitControls(
-                camera, renderer.domElement
-              );
-              cameraControls.addEventListener("change",
-                function()
-                {
-                  camera.updateProjectionMatrix();
-                  render();
-                }
-              );
+              camera = new THREE.PerspectiveCamera(55, WIDTH / HEIGHT, 45, 30000);
+
+              controls = new THREE.PointerLockControls(camera, document.body);
+              scene.add(controls.getObject());
+
             }
+
+            let onKeyDown = function(event){
+              switch (event.keyCode){
+                // up
+                case 38:
+                // 'w'  
+                case 87:
+                  // allows the user to move in the direction the camera is facing
+                  direction = new THREE.Vector3();
+                  camera.getWorldDirection( direction );
+                  distance = 50;
+                  camera.position.add(direction.multiplyScalar(distance));
+                  break;
+                 // down
+						    case 40:
+                 // 's'
+						    case 83:
+                  // allows the user to move in the opposite direction the camera is facing
+                  direction = new THREE.Vector3();
+                  camera.getWorldDirection( direction );
+                  distance = -50;
+                  camera.position.add(direction.multiplyScalar(distance));
+                  break;
+                // enter
+                case 13:
+                  document.body.requestPointerLock();
+                  break;
+              }
+            }
+
+            document.addEventListener('keydown', onKeyDown, false);
 
             function initLight()
             {
               let ambientLight = new THREE.AmbientLight(0x555555);
-              //ambientLight.position.set(1, 1, 1);
               scene.add(ambientLight);
 
               let directionalLight = new THREE.DirectionalLight(0xffeedd);
               directionalLight.position.set(0,0,1);
               scene.add(directionalLight);
-
-              //let flash = new THREE.PointLight
-
             }
 
             function initCube()
             {
-              geometry = new THREE.BoxGeometry(1, 1, 1);
-              cube = new THREE.Mesh(geometry, material);
-              //scene.add(cube);
+              let skyboxGeo = new THREE.BoxGeometry(10000, 10000, 10000);
 
-              loader = new THREE.CubeTextureLoader();
-              desert = loader.load([
-                'desert_ft.jpg',
-                'desert_bk.jpg',
-                'desert_up.jpg',
-                'desert_dn.jpg',
-                'desert_rt.jpg',
-                'desert_lf.jpg'
-              ]);
+              // mountain skybox
+              let mountainArray = [];
+              let texture_ft = new THREE.TextureLoader().load('arid2_ft.jpg');
+              let texture_bk = new THREE.TextureLoader().load('arid2_bk.jpg');
+              let texture_up = new THREE.TextureLoader().load('arid2_up.jpg');
+              let texture_dn = new THREE.TextureLoader().load('arid2_dn.jpg');
+              let texture_rt = new THREE.TextureLoader().load('arid2_rt.jpg');
+              let texture_lf = new THREE.TextureLoader().load('arid2_lf.jpg');
 
-              mountains = loader.load([
-                'arid2_ft.jpg',
-                'arid2_bk.jpg',
-                'arid2_up.jpg',
-                'arid2_dn.jpg',
-                'arid2_rt.jpg',
-                'arid2_lf.jpg'
-              ]);
+              mountainArray.push(new THREE.MeshBasicMaterial({map: texture_ft}));
+              mountainArray.push(new THREE.MeshBasicMaterial({map: texture_bk}));
+              mountainArray.push(new THREE.MeshBasicMaterial({map: texture_up}));
+              mountainArray.push(new THREE.MeshBasicMaterial({map: texture_dn}));
+              mountainArray.push(new THREE.MeshBasicMaterial({map: texture_rt}));
+              mountainArray.push(new THREE.MeshBasicMaterial({map: texture_lf}));
 
-              snow = loader.load([
-                'blizzard_ft.jpg',
-                'blizzard_bk.jpg',
-                'blizzard_up.jpg',
-                'blizzard_dn.jpg',
-                'blizzard_rt.jpg',
-                'blizzard_lf.jpg'
-              ]);
+              mountains = new THREE.Mesh(skyboxGeo, mountainArray);
 
-              test = loader.load([
-                'posx.jpg',
-                'negx.jpg',
-                'posy.jpg',
-                'negy.jpg',
-                'posz.jpg',
-                'negz.jpg'
-              ]);
+              // desert skybox
+              let desertArray = [];
+              texture_ft = new THREE.TextureLoader().load('desert_ft.jpg');
+              texture_bk = new THREE.TextureLoader().load('desert_bk.jpg');
+              texture_up = new THREE.TextureLoader().load('desert_up.jpg');
+              texture_dn = new THREE.TextureLoader().load('desert_dn.jpg');
+              texture_rt = new THREE.TextureLoader().load('desert_rt.jpg');
+              texture_lf = new THREE.TextureLoader().load('desert_lf.jpg');
 
+              desertArray.push(new THREE.MeshBasicMaterial({map: texture_ft}));
+              desertArray.push(new THREE.MeshBasicMaterial({map: texture_bk}));
+              desertArray.push(new THREE.MeshBasicMaterial({map: texture_up}));
+              desertArray.push(new THREE.MeshBasicMaterial({map: texture_dn}));
+              desertArray.push(new THREE.MeshBasicMaterial({map: texture_rt}));
+              desertArray.push(new THREE.MeshBasicMaterial({map: texture_lf}));
+
+              desert = new THREE.Mesh(skyboxGeo, desertArray);
+
+              // ice skybox
+              let iceArray = [];
+              texture_ft = new THREE.TextureLoader().load('blizzard_ft.jpg');
+              texture_bk = new THREE.TextureLoader().load('blizzard_bk.jpg');
+              texture_up = new THREE.TextureLoader().load('blizzard_up.jpg');
+              texture_dn = new THREE.TextureLoader().load('blizzard_dn.jpg');
+              texture_rt = new THREE.TextureLoader().load('blizzard_rt.jpg');
+              texture_lf = new THREE.TextureLoader().load('blizzard_lf.jpg');
+
+              iceArray.push(new THREE.MeshBasicMaterial({map: texture_ft}));
+              iceArray.push(new THREE.MeshBasicMaterial({map: texture_bk}));
+              iceArray.push(new THREE.MeshBasicMaterial({map: texture_up}));
+              iceArray.push(new THREE.MeshBasicMaterial({map: texture_dn}));
+              iceArray.push(new THREE.MeshBasicMaterial({map: texture_rt}));
+              iceArray.push(new THREE.MeshBasicMaterial({map: texture_lf}));
+
+              ice = new THREE.Mesh(skyboxGeo, iceArray);
+
+              // maps the images to the inside of the cube
+              for(let i = 0; i < 6; i++)
+              {
+                mountainArray[i].side = THREE.BackSide;
+                desertArray[i].side = THREE.BackSide;
+                iceArray[i].side = THREE.BackSide;
+              }
               
-              //scene.background = texture;
             }
 
+            // followed cloud example with own modifications :  https://redstapler.co/three-js-realistic-rain-tutorial/
             function initClouds()
             {
               let cloudLoader = new THREE.TextureLoader();
               cloudLoader.load("smoke-1.png", function(texture){
                 
-                cloudGeo = new THREE.PlaneBufferGeometry(500, 500);
+                cloudGeo = new THREE.PlaneBufferGeometry(3000, 3000);
                 cloudMaterial = new THREE.MeshLambertMaterial({
                   map: texture,
                   transparent: true
                 });
-
-                for(let p = 0; p < 25; p++)
+                
+                for(let p = 0; p < 100; p++)
                 {
                   let cloud = new THREE.Mesh(cloudGeo, cloudMaterial);
                   cloud.position.set(
-                    Math.random()*800 - 400,
-                    500,
-                    Math.random()*500 - 450
+                    (Math.random() * (max2 - min2 + 1) ) + min2,
+                    5000,
+                    (Math.random() * (max2 - min2 + 1) ) + min2
                   );
-                  cloud.rotation.x = 1.16;
-                  cloud.rotation.y = -0.12;
-                  cloud.rotation.z = Math.random()*360;
-                  cloud.material.opacity = 0.3;
+                  cloud.rotation.x = Math.PI/2;
+                  cloud.rotation.y = 0;
+                  cloud.rotation.z = 0;
+                  cloud.material.opacity = 0.6;
                   cloudParticles.push(cloud);
-                  scene.add(cloud);
                 }
-
-
               });
             }
 
+            // adds clouds created from initCloud() to the scene
+            function addClouds()
+            {
+              for(let p = 0; p < 100; p++)
+                {
+                  scene.add(cloudParticles[p]);
+                }
+            }
+
+            // removes clouds created from initCloud() from the scene
+            function removeClouds()
+            {
+              for(let p = 0; p < 100; p++)
+                {
+                  scene.remove(cloudParticles[p]);
+                }
+            }
+
+            // followed rain tutorial with own modifications : https://redstapler.co/three-js-realistic-rain-tutorial/
             function initRain()
             {
-              rainGeo = new THREE.Geometry();
+              rainGeo = new THREE.SphereGeometry();
+
+              // creates rain drops using Vector3
               for(let i = 0; i < rainCount; i++)
               {
                 rainDrop = new THREE.Vector3(
-                  Math.random() * 400 - 200,
-                  Math.random() * 500 - 250,
-                  Math.random() * 400 - 200
+                  (Math.random() * (max - min + 1) ) + min,
+                  Math.random() * 10000,
+                  (Math.random() * (max - min + 1) ) + min
                 );
                 rainDrop.velocity = {};
                 rainDrop.velocity = 0;
@@ -187,13 +250,12 @@
               }
 
               rainMaterial = new THREE.PointsMaterial({
-                color: 0xaaaaaa,
+                color: 0xFFFFFF,
                 size: 0.1,
                 transparent: true
               });
 
               rain = new THREE.Points(rainGeo, rainMaterial);
-              scene.add(rain);
             }
 
             // dat.gui
@@ -203,70 +265,57 @@
               this.desert = false;
               this.snow = false;
               this.test = false;
+              this.rain = false;
+              this.rainClouds = false;
             }
-
-            function makeFalse()
-            {
-              guiControls.mountains = false;
-              guiControls.desert = false;
-              guiControls.snow = false;
-              guiControls.test = false;
-            }
-
 
             let datGUI = new dat.GUI();
 
+            // different environments (skyboxes)
             let environmentFolder = datGUI.addFolder("Environments");
-            environmentFolder.add(guiControls, "mountains");
-            environmentFolder.add(guiControls, "desert");
-            environmentFolder.add(guiControls, "snow");
-            environmentFolder.add(guiControls, "test");
+            environmentFolder.add(guiControls, "mountains").name("Mountains").onChange(function(flag){
+              flag ? scene.add(mountains) : scene.remove(mountains);
+              render();
+            });
+            environmentFolder.add(guiControls, "desert").name("Desert").onChange(function(flag){
+              flag ? scene.add(desert) : scene.remove(desert);
+              render();
+            });
+            environmentFolder.add(guiControls, "snow").name("Snow").onChange(function(flag){
+              flag ? scene.add(ice) : scene.remove(ice);
+              render();
+            });
+            
+            // weather
+            let weatherFolder = datGUI.addFolder("Weather");
 
+            weatherFolder.add(guiControls, "rain").name("Rain").onChange(function(flag){
+              flag ? scene.add(rain) : scene.remove(rain);
+              render();
+            });
+            weatherFolder.add(guiControls, "rainClouds").name("Rain Clouds").onChange(function(flag){
+              flag ? addClouds() : removeClouds();
+              render();
+            });
 
             function render()
             {
-              // if(~guiControls.mountains || ~guiControls.desert || ~guiControls.snow || ~guiControls.test)
-              // {
-              //   scene.background = null;
-              // }
-              if(guiControls.mountains)
-              {
-                //makeFalse();
-                //guiControls.mountains = true;
-                scene.background = mountains;
 
-              }
-              if(guiControls.desert)
-              {
-                //makeFalse();
-                scene.background = desert;
-              }
-              if(guiControls.snow)
-              {
-                //makeFalse();
-                scene.background = snow;
-              }
-              if(guiControls.test)
-              {
-                //makeFalse();
-                scene.background = test;
-              }
-
+              // rotates the clouds for animation
               cloudParticles.forEach(p => {
-                p.rotation.z -= 0.0001;
+                p.rotation.z -= 0.003;
               });
 
+              // adjusts the rain's velocity when dropping and adjusts when hits ground
               rainGeo.vertices.forEach(p => {
-                p.velocity -= 0.01 + Math.random() * 0.01;
+                p.velocity = -35
                 p.y += p.velocity;
-                if (p.y < -200)
+                if (p.y < -5000)
                 {
-                  p.y = 200;
-                  p.velocity = 0;
+                  p.y = 5000;
                 }
               });
               rainGeo.verticesNeedUpdate = true;
-              //rain.rotation.y += 0.002;
 
               requestAnimationFrame(render);
               renderer.render(scene, camera);
